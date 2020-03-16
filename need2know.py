@@ -125,9 +125,6 @@ def autoscout24(driver):
                 scroll_pos_ref.value += 1080
                 driver.execute_script('window.scrollTo(0, {});'.format(scroll_pos_ref.value))
             ScraperHelper.wait_on_no_exception(get_img_attribute_style, on_img_attribute_load_fail, scroll_pos_ref)
-            def get_img_attribute_style_is_not_empty():
-                return len(get_img_attribute_style()) > 0
-            ScraperHelper.wait_on_valid(get_img_attribute_style_is_not_empty)
             def append_value():
                 full_info = page_entry.find_element_by_xpath('./div/a/div')
                 image_src_str = re.search(r'^background: url\("(.*)"\) center center \/ contain no-repeat;$', get_img_attribute_style()).group(1)
