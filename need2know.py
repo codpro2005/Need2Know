@@ -6,6 +6,7 @@ import re
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import math
 
 class Value():
     def __init__(self, id, output):
@@ -14,35 +15,6 @@ class Value():
     
     def to_string(self):
         return 'ID: {}\nOutput: {}'.format(self.id, self.output)
-
-def reddit(driver):
-    driver.get('https://www.reddit.com/hot')
-    values = []
-    for entry in driver.find_elements_by_xpath('//*[@id="SHORTCUT_FOCUSABLE_DIV"]/div[2]/div/div/div/div[2]/div[3]/div[1]/div[5]/div'):
-        try:
-            entry_container = entry.find_element_by_xpath('.//div/div')
-            entry_content = entry_container.find_element_by_xpath('.//div[2]/div[2]/div/a/div/h3')
-            print(entry_container.get_attribute('id'), entry_content.text)
-            values.append(Value(entry_container.get_attribute('id'), entry_content.text))
-        except:
-            pass
-    return values
-
-index = 0
-id = 0
-
-def google(driver):
-    global index
-    global id
-    driver.get('https://www.google.com')
-    input_field = driver.find_element_by_xpath('//*[@id="tsf"]/div[2]/div[1]/div[1]/div/div[2]/input')
-    input_field.send_keys('lol')
-    input_field.send_keys(Keys.RETURN)
-    values = [Value(id, 'Coole ID =>  {}'.format(id))]
-    index += 1
-    if (index % 2 == 0):
-        id += 1
-    return values
 
 class Reference():
     def __init__(self, value):
@@ -102,6 +74,31 @@ class ScraperHelper():
             return is_valid, has_been_invalid
         ScraperHelper.wait_on_action(do_while_not_valid_action, *args)
 
+# def reddit(driver):
+#     driver.get('https://www.reddit.com/hot')
+#     values = []
+#     for entry in driver.find_elements_by_xpath('//*[@id="SHORTCUT_FOCUSABLE_DIV"]/div[2]/div/div/div/div[2]/div[3]/div[1]/div[5]/div'):
+#         try:
+#             entry_container = entry.find_element_by_xpath('.//div/div')
+#             entry_content = entry_container.find_element_by_xpath('.//div[2]/div[2]/div/a/div/h3')
+#             print(entry_container.get_attribute('id'), entry_content.text)
+#             values.append(Value(entry_container.get_attribute('id'), entry_content.text))
+#         except:
+#             pass
+#     return values
+
+value = 0
+
+def google(driver):
+    global value
+    driver.get('https://www.google.com')
+    input_field = driver.find_element_by_xpath('//*[@id="tsf"]/div[2]/div[1]/div[1]/div/div[2]/input')
+    input_field.send_keys('lol')
+    input_field.send_keys(Keys.RETURN)
+    values = [Value(math.ceil(value / 2), 'Cool value =>  {}'.format(value))]
+    value += 1
+    return values
+
 def autoscout24(driver):
     def input_filters_and_search():
         driver.get('https://www.autoscout24.ch/')
@@ -131,19 +128,21 @@ def autoscout24(driver):
             def get_img_attribute_style_is_not_empty():
                 return len(get_img_attribute_style()) > 0
             ScraperHelper.wait_on_valid(get_img_attribute_style_is_not_empty)
-            full_info = page_entry.find_element_by_xpath('./div/a/div')
-            image_src_str = re.search(r'^background: url\("(.*)"\) center center \/ contain no-repeat;$', get_img_attribute_style()).group(1)
-            info = full_info.find_element_by_xpath('./div[2]')
-            title_str = info.find_element_by_xpath('./div/div/span').text
-            content = info.find_element_by_xpath('./div[2]')
-            price_str = content.find_element_by_xpath('./div/span').text
-            distance_driven_str = content.find_element_by_xpath('./div[2]').text
-            gear_type_str = content.find_element_by_xpath('./div[3]').text
-            force_str = content.find_element_by_xpath('./div[4]').text
-            fuel_tank_str = content.find_element_by_xpath('./div[5]').text
-            id = image_src_str + title_str + price_str + distance_driven_str + gear_type_str + force_str + fuel_tank_str
-            value = 'Image src: {}, Title: {}, Price: {}, Distance driven: {}, Gear type: {}, Force: {}, Fuel tank: {}'.format(image_src_str, title_str, price_str, distance_driven_str, gear_type_str, force_str, fuel_tank_str)
-            values.append(Value(id, value))
+            def append_value():
+                full_info = page_entry.find_element_by_xpath('./div/a/div')
+                image_src_str = re.search(r'^background: url\("(.*)"\) center center \/ contain no-repeat;$', get_img_attribute_style()).group(1)
+                info = full_info.find_element_by_xpath('./div[2]')
+                title_str = info.find_element_by_xpath('./div/div/span').text
+                content = info.find_element_by_xpath('./div[2]')
+                price_str = content.find_element_by_xpath('./div/span').text
+                distance_driven_str = content.find_element_by_xpath('./div[2]').text
+                gear_type_str = content.find_element_by_xpath('./div[3]').text
+                force_str = content.find_element_by_xpath('./div[4]').text
+                fuel_tank_str = content.find_element_by_xpath('./div[5]').text
+                id = image_src_str + title_str + price_str + distance_driven_str + gear_type_str + force_str + fuel_tank_str
+                value = 'Image src: {}, Title: {}, Price: {}, Distance driven: {}, Gear type: {}, Force: {}, Fuel tank: {}'.format(image_src_str, title_str, price_str, distance_driven_str, gear_type_str, force_str, fuel_tank_str)
+                values.append(Value(id, value))
+            ScraperHelper.wait_on_no_exception(append_value)
         def get_pages():
             return driver.find_elements_by_xpath('//*[@id="app"]/div[1]/main/section/div/div/div/div/div[2]/div[2]/nav/ul/li')
         def check_no_exception_page_attribute_class():
@@ -224,5 +223,5 @@ while True:
                 mail_helper.send_mail('Need2Know: {}'.format(web_bot.name), new_unique_value.output)
         else:
             first_iteration = False
-        print('Length: ', len(web_bot.unique_values))
-    sleep(10)
+        # print('Length: ', len(web_bot.unique_values))
+    sleep(2)
