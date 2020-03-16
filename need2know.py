@@ -152,7 +152,7 @@ def autoscout24(driver, *args):
                 force_str = content.find_element_by_xpath('./div[4]').text
                 fuel_tank_str = content.find_element_by_xpath('./div[5]').text
                 id = image_src_str + title_str + price_str + distance_driven_str + gear_type_str + force_str + fuel_tank_str
-                value = 'Image src: {}, Title: {}, Price: {}, Distance driven: {}, Gear type: {}, Force: {}, Fuel tank: {}'.format(image_src_str, title_str, price_str, distance_driven_str, gear_type_str, force_str, fuel_tank_str)
+                value = 'Image src: {}\nTitle: {}\nPrice: {}\nDistance driven: {}\nGear type: {}\nForce: {}\nFuel tank: {}'.format(image_src_str, title_str, price_str, distance_driven_str, gear_type_str, force_str, fuel_tank_str)
                 values.append(Value(id, value))
             ScraperHelper.wait_on_no_exception(append_value)
         def get_pages():
@@ -231,9 +231,7 @@ while True:
         new_unique_values = web_bot.get_new_unique_values()
         if not first_iteration:
             for new_unique_value in new_unique_values:
-                print(new_unique_value.output)
                 mail_helper.send_mail('Need2Know: {}'.format(web_bot.name), new_unique_value.output)
         else:
             first_iteration = False
-        # print('Length: ', len(web_bot.unique_values))
-    sleep(2)
+    sleep(900)
