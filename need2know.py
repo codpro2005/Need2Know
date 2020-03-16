@@ -3,6 +3,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 from time import sleep
 import re
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 class Value():
     def __init__(self, id, output):
@@ -106,7 +109,9 @@ def autoscout24(driver):
     ScraperHelper.select_on_no_exception(driver, '//*[@id="model"]', 'Q2')
     ScraperHelper.select_on_no_exception(driver, '//*[@id="yearfrom"]', 'Ab 2001')
     ScraperHelper.select_on_no_exception(driver, '//*[@id="priceto"]', 'Bis CHF 200\'000')
-    driver.find_element_by_xpath('//*[@id="app"]/div[1]/main/section/div[2]/div/div/div/section[1]/div[3]/div/div[2]/span/a').click()
+    def load_search_results():
+        driver.find_element_by_xpath('//*[@id="app"]/div[1]/main/section/div[2]/div/div/div/section[1]/div[3]/div/div[2]/span/a').click()
+    ScraperHelper.wait_on_no_exception(load_search_results)
     values = []
     next_page_exists = True
     while next_page_exists:
@@ -186,8 +191,31 @@ web_bots = [
     WebBot('autoscout24', autoscout24)
 ]
 
+class MailHelper():
+    def __init__(self, from_, from_password, to):
+        self.from_ = from_
+        self.from_password = from_password
+        self.to = to
+
+    def send_mail(self, subject, context):
+        mail = MIMEMultipart()
+        mail['From'] = self.from_
+        mail['To'] = self.to
+        mail['Subject'] = subject
+        mail.attach(MIMEText(context))
+
+        mailserver = smtplib.SMTP('smtp.gmail.com', 587)
+        mailserver.ehlo()
+        mailserver.starttls()
+        mailserver.ehlo()
+        mailserver.login(self.from_, self.from_password)
+        mailserver.sendmail(self.from_, self.to, mail.as_string())
+        mailserver.quit()
+
+
 iterations = 0
 first_iteration = True
+mail_helper = MailHelper('need2know.output@gmail.com', 'Need2Know123', 'need2know.output@gmail.com')
 while True:
     for web_bot in web_bots:
         iterations += 1
@@ -195,8 +223,8 @@ while True:
         new_unique_values = web_bot.get_new_unique_values()
         if not first_iteration:
             for new_unique_value in new_unique_values:
-                print(new_unique_value.output)
+                mail_helper.send_mail('Need2Know: {}'.format(web_bot.name), new_unique_value.output)
         else:
             first_iteration = False
         print('Length: ', len(web_bot.unique_values))
-    sleep(900)
+    sleep(10)
