@@ -99,13 +99,28 @@ def google(driver):
     value += 1
     return values
 
-def autoscout24(driver):
+def autoscout24(driver, *args):
+    brand = args[0]
+    model = args[1]
+    year_from = args[2]
+    price_to = args[3]
     def input_filters_and_search():
         driver.get('https://www.autoscout24.ch/')
-        Select(driver.find_element_by_xpath('//*[@id="make"]')).select_by_visible_text('AUDI')
-        ScraperHelper.select_on_no_exception(driver, '//*[@id="model"]', 'Q2')
-        ScraperHelper.select_on_no_exception(driver, '//*[@id="yearfrom"]', 'Ab 2001')
-        ScraperHelper.select_on_no_exception(driver, '//*[@id="priceto"]', 'Bis CHF 200\'000')
+        def if_not_none_action(not_none_condition, action):
+            if not not_none_condition is None:
+                action()
+        def select_brand():
+            Select(driver.find_element_by_xpath('//*[@id="make"]')).select_by_visible_text(brand)
+        if_not_none_action(brand, select_brand)
+        def select_model():
+            ScraperHelper.select_on_no_exception(driver, '//*[@id="model"]', model)
+        if_not_none_action(model, select_model)
+        def select_year_from():
+            ScraperHelper.select_on_no_exception(driver, '//*[@id="yearfrom"]', year_from)
+        if_not_none_action(year_from, select_year_from)
+        def select_price_to():
+            ScraperHelper.select_on_no_exception(driver, '//*[@id="priceto"]', price_to)
+        if_not_none_action(price_to, select_price_to)
         driver.find_element_by_xpath('//*[@id="app"]/div[1]/main/section/div[2]/div/div/div/section[1]/div[3]/div/div[2]/span/a').click()
     ScraperHelper.wait_on_no_exception(input_filters_and_search)
     values = []
@@ -162,14 +177,15 @@ class WebBot():
     driver = webdriver.Chrome()
     driver.maximize_window()
 
-    def __init__(self, name, get_new_values):
+    def __init__(self, name, get_new_values, *get_new_values_args):
         self.name = name
         self.get_new_values = get_new_values
+        self.get_new_values_args = get_new_values_args
         self.unique_values = []
 
     def get_new_unique_values(self):
         new_unique_values = []
-        for new_value in self.get_new_values(WebBot.driver):
+        for new_value in self.get_new_values(WebBot.driver, *self.get_new_values_args):
             new_value_is_unique = True
             for unique_value in self.unique_values:
                 if new_value.id == unique_value.id:
@@ -182,7 +198,7 @@ class WebBot():
 web_bots = [
     # WebBot('reddit', reddit),
     # WebBot('google', google),
-    WebBot('autoscout24', autoscout24)
+    WebBot('autoscout24', autoscout24, 'AUDI', 'Q2', 'Ab 2001', 'Bis CHF 200\'000')
 ]
 
 class MailHelper():
