@@ -102,16 +102,15 @@ class ScraperHelper():
             return is_valid, has_been_invalid
         ScraperHelper.wait_on_action(do_while_not_valid_action, *args)
 
-
 def autoscout24(driver):
-    driver.get('https://www.autoscout24.ch/')
-    Select(driver.find_element_by_xpath('//*[@id="make"]')).select_by_visible_text('AUDI')
-    ScraperHelper.select_on_no_exception(driver, '//*[@id="model"]', 'Q2')
-    ScraperHelper.select_on_no_exception(driver, '//*[@id="yearfrom"]', 'Ab 2001')
-    ScraperHelper.select_on_no_exception(driver, '//*[@id="priceto"]', 'Bis CHF 200\'000')
-    def load_search_results():
+    def input_filters_and_search():
+        driver.get('https://www.autoscout24.ch/')
+        Select(driver.find_element_by_xpath('//*[@id="make"]')).select_by_visible_text('AUDI')
+        ScraperHelper.select_on_no_exception(driver, '//*[@id="model"]', 'Q2')
+        ScraperHelper.select_on_no_exception(driver, '//*[@id="yearfrom"]', 'Ab 2001')
+        ScraperHelper.select_on_no_exception(driver, '//*[@id="priceto"]', 'Bis CHF 200\'000')
         driver.find_element_by_xpath('//*[@id="app"]/div[1]/main/section/div[2]/div/div/div/section[1]/div[3]/div/div[2]/span/a').click()
-    ScraperHelper.wait_on_no_exception(load_search_results)
+    ScraperHelper.wait_on_no_exception(input_filters_and_search)
     values = []
     next_page_exists = True
     while next_page_exists:
@@ -184,7 +183,6 @@ class WebBot():
                 new_unique_values.append(new_value)
         return new_unique_values
 
-
 web_bots = [
     # WebBot('reddit', reddit),
     # WebBot('google', google),
@@ -212,7 +210,6 @@ class MailHelper():
         mailserver.sendmail(self.from_, self.to, mail.as_string())
         mailserver.quit()
 
-
 iterations = 0
 first_iteration = True
 mail_helper = MailHelper('need2know.output@gmail.com', 'Need2Know123', 'need2know.output@gmail.com')
@@ -223,6 +220,7 @@ while True:
         new_unique_values = web_bot.get_new_unique_values()
         if not first_iteration:
             for new_unique_value in new_unique_values:
+                print(new_unique_value.output)
                 mail_helper.send_mail('Need2Know: {}'.format(web_bot.name), new_unique_value.output)
         else:
             first_iteration = False
