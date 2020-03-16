@@ -213,7 +213,6 @@ class MailHelper():
         mail['To'] = self.to
         mail['Subject'] = subject
         mail.attach(MIMEText(context))
-
         mailserver = smtplib.SMTP('smtp.gmail.com', 587)
         mailserver.ehlo()
         mailserver.starttls()
