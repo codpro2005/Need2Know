@@ -32,7 +32,7 @@ class ScraperHelper():
                 pass
 
     @staticmethod
-    def wait_on_action(do_while_not_valid_action, *args):
+    def do_until_action(do_while_not_valid_action, *args):
         on_invalid_action = None
         on_invalid_action_arguments = []
         if len(args) > 0:
@@ -47,7 +47,7 @@ class ScraperHelper():
             is_valid, has_been_invalid = do_while_not_valid_action(has_been_invalid, on_invalid_action, *on_invalid_action_arguments)
 
     @staticmethod
-    def wait_on_no_exception(check_no_exception_action, *args):
+    def do_until_no_exception(check_no_exception_action, *args):
         def do_while_exception_action(had_failed, on_exception_action, *on_fail_action_arguments):
             has_loaded = False
             try:
@@ -59,10 +59,10 @@ class ScraperHelper():
                     if not on_exception_action is None:
                         on_exception_action(*on_fail_action_arguments)
             return has_loaded, had_failed
-        ScraperHelper.wait_on_action(do_while_exception_action, *args)
+        ScraperHelper.do_until_action(do_while_exception_action, *args)
 
     @staticmethod
-    def wait_on_valid(check_if_valid_action, *args):
+    def do_until_valid(check_if_valid_action, *args):
         def do_while_not_valid_action(has_been_invalid, on_invalid_action, *on_invalid_action_arguments):
             is_valid = False
             if check_if_valid_action():
@@ -72,7 +72,7 @@ class ScraperHelper():
                 if not on_invalid_action is None:
                     on_invalid_action(*on_invalid_action_arguments)
             return is_valid, has_been_invalid
-        ScraperHelper.wait_on_action(do_while_not_valid_action, *args)
+        ScraperHelper.do_until_action(do_while_not_valid_action, *args)
 
 # def reddit(driver):
 #     driver.get('https://www.reddit.com/hot')
@@ -100,78 +100,80 @@ def google(driver):
     return values
 
 def autoscout24(driver, *args):
-    brand = args[0]
-    model = args[1]
-    year_from = args[2]
-    price_to = args[3]
-    def input_filters_and_search():
-        driver.get('https://www.autoscout24.ch/')
-        def if_not_none_action(not_none_condition, action):
-            if not not_none_condition is None:
-                action()
-        def select_brand():
-            Select(driver.find_element_by_xpath('//*[@id="make"]')).select_by_visible_text(brand)
-        if_not_none_action(brand, select_brand)
-        def select_model():
-            ScraperHelper.select_on_no_exception(driver, '//*[@id="model"]', model)
-        if_not_none_action(model, select_model)
-        def select_year_from():
-            ScraperHelper.select_on_no_exception(driver, '//*[@id="yearfrom"]', year_from)
-        if_not_none_action(year_from, select_year_from)
-        def select_price_to():
-            ScraperHelper.select_on_no_exception(driver, '//*[@id="priceto"]', price_to)
-        if_not_none_action(price_to, select_price_to)
-        driver.find_element_by_xpath('//*[@id="app"]/div[1]/main/section/div[2]/div/div/div/section[1]/div[3]/div/div[2]/span/a').click()
-    ScraperHelper.wait_on_no_exception(input_filters_and_search)
-    values = []
-    next_page_exists = True
-    while next_page_exists:
-        def get_page_entries():
-            return driver.find_elements_by_xpath('//*[@id="app"]/div[1]/main/section/div/div/div/div/div[2]/div[2]/div[1]/section/article')
-        def check_no_exception_page_entries():
+    def action():
+        brand = args[0]
+        model = args[1]
+        year_from = args[2]
+        price_to = args[3]
+        def input_filters_and_search():
+            driver.get('https://www.autoscout24.ch/')
+            def if_not_none_action(not_none_condition, action):
+                if not not_none_condition is None:
+                    action()
+            def select_brand():
+                Select(driver.find_element_by_xpath('//*[@id="make"]')).select_by_visible_text(brand)
+            if_not_none_action(brand, select_brand)
+            def select_model():
+                ScraperHelper.select_on_no_exception(driver, '//*[@id="model"]', model)
+            if_not_none_action(model, select_model)
+            def select_year_from():
+                ScraperHelper.select_on_no_exception(driver, '//*[@id="yearfrom"]', year_from)
+            if_not_none_action(year_from, select_year_from)
+            def select_price_to():
+                ScraperHelper.select_on_no_exception(driver, '//*[@id="priceto"]', price_to)
+            if_not_none_action(price_to, select_price_to)
+            driver.find_element_by_xpath('//*[@id="app"]/div[1]/main/section/div[2]/div/div/div/section[1]/div[3]/div/div[2]/span/a').click()
+        ScraperHelper.do_until_no_exception(input_filters_and_search)
+        values = []
+        next_page_exists = True
+        while next_page_exists:
+            def get_page_entries():
+                return driver.find_elements_by_xpath('//*[@id="app"]/div[1]/main/section/div/div/div/div/div[2]/div[2]/div[1]/section/article')
+            def check_no_exception_page_entries():
+                for page_entry in get_page_entries():
+                    page_entry.find_element_by_xpath('./div/a/div')
+            ScraperHelper.do_until_no_exception(check_no_exception_page_entries)
+            scroll_pos_ref = Reference(0)
             for page_entry in get_page_entries():
-                page_entry.find_element_by_xpath('./div/a/div')
-        ScraperHelper.wait_on_no_exception(check_no_exception_page_entries)
-        scroll_pos_ref = Reference(0)
-        for page_entry in get_page_entries():
-            def get_img_attribute_style():
-                return page_entry.find_element_by_xpath('./div/a/div/div/div/div/div/div/div/div').get_attribute('style')
-            def on_img_attribute_load_fail(scroll_pos_ref):
-                scroll_pos_ref.value += 1080
-                driver.execute_script('window.scrollTo(0, {});'.format(scroll_pos_ref.value))
-            ScraperHelper.wait_on_no_exception(get_img_attribute_style, on_img_attribute_load_fail, scroll_pos_ref)
-            def append_value():
-                full_info = page_entry.find_element_by_xpath('./div/a/div')
-                image_src_str = re.search(r'^background: url\("(.*)"\) center center \/ contain no-repeat;$', get_img_attribute_style()).group(1)
-                info = full_info.find_element_by_xpath('./div[2]')
-                title_str = info.find_element_by_xpath('./div/div/span').text
-                content = info.find_element_by_xpath('./div[2]')
-                price_str = content.find_element_by_xpath('./div/span').text
-                distance_driven_str = content.find_element_by_xpath('./div[2]').text
-                gear_type_str = content.find_element_by_xpath('./div[3]').text
-                force_str = content.find_element_by_xpath('./div[4]').text
-                fuel_tank_str = content.find_element_by_xpath('./div[5]').text
-                id = image_src_str + title_str + price_str + distance_driven_str + gear_type_str + force_str + fuel_tank_str
-                value = 'Image src: {}\nTitle: {}\nPrice: {}\nDistance driven: {}\nGear type: {}\nForce: {}\nFuel tank: {}'.format(image_src_str, title_str, price_str, distance_driven_str, gear_type_str, force_str, fuel_tank_str)
-                values.append(Value(id, value))
-            ScraperHelper.wait_on_no_exception(append_value)
-        def get_pages():
-            return driver.find_elements_by_xpath('//*[@id="app"]/div[1]/main/section/div/div/div/div/div[2]/div[2]/nav/ul/li')
-        def check_no_exception_page_attribute_class():
-            for page in get_pages():
-                page.get_attribute('class')
-        ScraperHelper.wait_on_no_exception(check_no_exception_page_attribute_class)
-        pages = get_pages()
-        active_page = None
-        for page in pages:
-            if 'active' in page.get_attribute('class'):
-                active_page = page
-        next_page_index = pages.index(active_page) + 1
-        if (next_page_index < len(pages)):
-            pages[next_page_index].click()
-        else:
-            next_page_exists = False
-    return values
+                def get_img_attribute_style():
+                    return page_entry.find_element_by_xpath('./div/a/div/div/div/div/div/div/div/div').get_attribute('style')
+                def on_img_attribute_load_fail(scroll_pos_ref):
+                    scroll_pos_ref.value += 1080
+                    driver.execute_script('window.scrollTo(0, {});'.format(scroll_pos_ref.value))
+                ScraperHelper.do_until_no_exception(get_img_attribute_style, on_img_attribute_load_fail, scroll_pos_ref)
+                def append_value():
+                    full_info = page_entry.find_element_by_xpath('./div/a/div')
+                    image_src_str = re.search(r'^background: url\("(.*)"\) center center \/ contain no-repeat;$', get_img_attribute_style()).group(1)
+                    info = full_info.find_element_by_xpath('./div[2]')
+                    title_str = info.find_element_by_xpath('./div/div/span').text
+                    content = info.find_element_by_xpath('./div[2]')
+                    price_str = content.find_element_by_xpath('./div/span').text
+                    distance_driven_str = content.find_element_by_xpath('./div[2]').text
+                    gear_type_str = content.find_element_by_xpath('./div[3]').text
+                    force_str = content.find_element_by_xpath('./div[4]').text
+                    fuel_tank_str = content.find_element_by_xpath('./div[5]').text
+                    id = image_src_str + title_str + price_str + distance_driven_str + gear_type_str + force_str + fuel_tank_str
+                    value = 'Image src: {}\nTitle: {}\nPrice: {}\nDistance driven: {}\nGear type: {}\nForce: {}\nFuel tank: {}'.format(image_src_str, title_str, price_str, distance_driven_str, gear_type_str, force_str, fuel_tank_str)
+                    values.append(Value(id, value))
+                ScraperHelper.do_until_no_exception(append_value)
+            def get_pages():
+                return driver.find_elements_by_xpath('//*[@id="app"]/div[1]/main/section/div/div/div/div/div[2]/div[2]/nav/ul/li')
+            def check_no_exception_page_attribute_class():
+                for page in get_pages():
+                    page.get_attribute('class')
+            ScraperHelper.do_until_no_exception(check_no_exception_page_attribute_class)
+            pages = get_pages()
+            active_page = None
+            for page in pages:
+                if 'active' in page.get_attribute('class'):
+                    active_page = page
+            next_page_index = pages.index(active_page) + 1
+            if (next_page_index < len(pages)):
+                pages[next_page_index].click()
+            else:
+                next_page_exists = False
+        return values
+    ScraperHelper.do_until_no_exception(action)
 
 class WebBot():
     driver = webdriver.Chrome()
