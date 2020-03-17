@@ -100,7 +100,7 @@ def google(driver):
     return values
 
 def autoscout24(driver, *args):
-    values = Reference(None)
+    values = Reference([])
     def action():
         brand = args[0]
         model = args[1]
@@ -174,7 +174,7 @@ def autoscout24(driver, *args):
             else:
                 next_page_exists = False
     ScraperHelper.do_until_no_exception(action)
-    return values
+    return values.value
 
 class WebBot():
     driver = webdriver.Chrome()
