@@ -100,6 +100,7 @@ def google(driver):
     return values
 
 def autoscout24(driver, *args):
+    values = Reference(None)
     def action():
         brand = args[0]
         model = args[1]
@@ -124,7 +125,7 @@ def autoscout24(driver, *args):
             if_not_none_action(price_to, select_price_to)
             driver.find_element_by_xpath('//*[@id="app"]/div[1]/main/section/div[2]/div/div/div/section[1]/div[3]/div/div[2]/span/a').click()
         ScraperHelper.do_until_no_exception(input_filters_and_search)
-        values = []
+        values.value = []
         next_page_exists = True
         while next_page_exists:
             def get_page_entries():
@@ -154,7 +155,7 @@ def autoscout24(driver, *args):
                     fuel_tank_str = content.find_element_by_xpath('./div[5]').text
                     id = image_src_str + title_str + price_str + distance_driven_str + gear_type_str + force_str + fuel_tank_str
                     value = 'Image src: {}\nTitle: {}\nPrice: {}\nDistance driven: {}\nGear type: {}\nForce: {}\nFuel tank: {}'.format(image_src_str, title_str, price_str, distance_driven_str, gear_type_str, force_str, fuel_tank_str)
-                    values.append(Value(id, value))
+                    values.value.append(Value(id, value))
                 ScraperHelper.do_until_no_exception(append_value)
             def get_pages():
                 return driver.find_elements_by_xpath('//*[@id="app"]/div[1]/main/section/div/div/div/div/div[2]/div[2]/nav/ul/li')
@@ -172,8 +173,8 @@ def autoscout24(driver, *args):
                 pages[next_page_index].click()
             else:
                 next_page_exists = False
-        return values
     ScraperHelper.do_until_no_exception(action)
+    return values
 
 class WebBot():
     driver = webdriver.Chrome()
@@ -236,4 +237,4 @@ while True:
                 mail_helper.send_mail('Need2Know: {}'.format(web_bot.name), new_unique_value.output)
         else:
             first_iteration = False
-    sleep(900)
+    sleep(10)
