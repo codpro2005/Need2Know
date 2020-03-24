@@ -240,4 +240,4 @@ while True:
                 any_iteration_successful = True
         except:
             print('Fail during iteration {} at site {}'.format(iterations, web_bot.site))
-    sleep(10)
+    sleep(900)
